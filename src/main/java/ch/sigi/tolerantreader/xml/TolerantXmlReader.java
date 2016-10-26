@@ -30,7 +30,23 @@ import com.sun.org.apache.xml.internal.dtm.ref.DTMNodeList;
 
 public class TolerantXmlReader {
 
-    public static <T> T read(InputStream is, Class<T> clazz) throws TolerantReaderException {
+
+    public static final String STATRT_OF_EXPRESSION = "/";
+    public static final String PATH_DELIMITER = "/";
+
+    private String rootElementName;
+
+    public String getRootElementName() {
+        return rootElementName;
+    }
+
+    public void setRootElementName(String rootElementName) {
+        this.rootElementName = rootElementName;
+    }
+
+    public <T> T read(InputStream is, Class<T> clazz) throws TolerantReaderException {
+
+        prepareForClass(clazz);
 
         try {
             Document dom = createDomFor(is);
@@ -39,7 +55,7 @@ public class TolerantXmlReader {
 
             Field[] fields = clazz.getDeclaredFields();
             for (Field field : fields) {
-                String xPath = "/" + clazz.getSimpleName().toLowerCase() + "/" + field.getName();
+                String xPath = STATRT_OF_EXPRESSION + rootElementName + PATH_DELIMITER + field.getName();
                 Object value = readForObject(dom, xPath, field.getType(), getGenericTypeClass(field));
 
                 clazz.getMethod(setterFor(field), field.getType()).invoke(instance, nullSafeCast(field.getType(), value));
@@ -50,6 +66,12 @@ public class TolerantXmlReader {
         } catch (Throwable t) {
             throw new TolerantReaderException(t);
         }
+    }
+
+    private <T> void prepareForClass(Class<T> clazz) {
+        if (rootElementName == null)
+            rootElementName = clazz.getSimpleName();
+        rootElementName = rootElementName.toLowerCase();
     }
 
     private static Document createDomFor(InputStream is) throws IOException, SAXException, ParserConfigurationException {
@@ -77,7 +99,10 @@ public class TolerantXmlReader {
             throw new TolerantReaderException("Mate, common!! Don't use primitive types (" + returnType.getSimpleName()
                     + ") in a TolerantReader Model-Class. Every field must be nullable in order to be tolerant. Agree ?  ;-)");
 
+
         XPathExpression xPathExpression = XPathFactory.newInstance().newXPath().compile(xPath);
+        if (!xPathExists(dom, xPathExpression))
+            return null;
 
         if (Boolean.class.isAssignableFrom(returnType)) {
             return Boolean.valueOf((String) xPathExpression.evaluate(dom, XPathConstants.STRING));
@@ -114,6 +139,11 @@ public class TolerantXmlReader {
         return recursiveProcessSubtree(dom, xPath, returnType);
     }
 
+    private static boolean xPathExists(Document dom, XPathExpression xPathExpression) throws XPathExpressionException {
+        DTMNodeList nodeList = (DTMNodeList) xPathExpression.evaluate(dom, XPathConstants.NODESET);
+        return nodeList != null && nodeList.getLength() > 0;
+    }
+
     private static <T> T recursiveProcessSubtree(Document dom, String xPath, Class<T> returnType) throws InstantiationException, IllegalAccessException, InvocationTargetException,
             NoSuchMethodException,
             XPathExpressionException, ClassNotFoundException, TolerantReaderException {
@@ -138,6 +168,32 @@ public class TolerantXmlReader {
 
     private static <T> T nullSafeCast(Class<T> clazz, Object value) {
         return value == null ? null : clazz.cast(value);
+    }
+
+    public static final class Builder {
+
+        private String rootElementName;
+
+        public static Builder defaultSettings() {
+            return new Builder();
+        }
+
+        public Builder withRootElementNameAsClassName() {
+            rootElementName = null;
+            return this;
+        }
+
+        public Builder withCustomRootElementName(String name) {
+            rootElementName = name;
+            return this;
+        }
+
+        public TolerantXmlReader build() {
+            TolerantXmlReader tolerantXmlReader = new TolerantXmlReader();
+            tolerantXmlReader.setRootElementName(rootElementName);
+            return tolerantXmlReader;
+        }
+
     }
 
 }

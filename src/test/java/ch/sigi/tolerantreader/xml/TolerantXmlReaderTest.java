@@ -19,6 +19,8 @@ import org.junit.Test;
 
 import ch.sigi.tolerantreader.exception.TolerantReaderException;
 import ch.sigi.tolerantreader.model.Model;
+import ch.sigi.tolerantreader.model.ModelSubset;
+import ch.sigi.tolerantreader.model.ModelSuperset;
 import ch.sigi.tolerantreader.model.SubTree;
 
 public class TolerantXmlReaderTest {
@@ -29,17 +31,73 @@ public class TolerantXmlReaderTest {
         InputStream is = toXmlStringInputStream(model);
 
         try {
-            Model parsedModel = TolerantXmlReader.read(is, Model.class);
+            Model parsedModel = TolerantXmlReader.Builder
+                    .defaultSettings()
+                    .build().read(is, Model.class);
+
             Assert.assertEquals(model, parsedModel);
         } catch (TolerantReaderException e) {
             Assert.fail("Exception in Tolerant Reader: " + e.getMessage());
         }
     }
 
-    private InputStream toXmlStringInputStream(Model model) {
+    @Test
+    public void testASupersetOfTheModel() {
+        Model model = exampleModel();
+        InputStream is = toXmlStringInputStream(model);
+
+        try {
+            ModelSuperset parsedModel = TolerantXmlReader.Builder
+                    .defaultSettings()
+                    .withCustomRootElementName("Model")
+                    .build().read(is, ModelSuperset.class);
+
+            Assert.assertEquals(model.getSomeBoolean(), parsedModel.getSomeBoolean());
+            Assert.assertEquals(model.getSomeDouble(), parsedModel.getSomeDouble());
+            Assert.assertEquals(model.getSomeFloat(), parsedModel.getSomeFloat());
+            Assert.assertEquals(model.getSomeInteger(), parsedModel.getSomeInteger());
+            Assert.assertEquals(model.getSomeShort(), parsedModel.getSomeShort());
+            Assert.assertEquals(model.getSomeText(), parsedModel.getSomeText());
+            Assert.assertEquals(model.getSubTree().getSomeText(), parsedModel.getSubTree().getSomeText());
+            Assert.assertEquals(model.getSubTree().getSomeList().toArray(), parsedModel.getSubTree().getSomeList().toArray());
+            Assert.assertEquals(model.getSubTree().getSomeLong(), parsedModel.getSubTree().getSomeLong());
+            Assert.assertNull(parsedModel.getSomeAdditionalField());
+            Assert.assertNull(parsedModel.getSubTree().getSomeNewText());
+            Assert.assertNull(parsedModel.getSubTree().getSomeOtherList());
+
+        } catch (TolerantReaderException e) {
+            Assert.fail("Exception in Tolerant Reader: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testASubsetOfTheModel() {
+        Model model = exampleModel();
+        InputStream is = toXmlStringInputStream(model);
+
+        try {
+            ModelSubset parsedModel = TolerantXmlReader.Builder
+                    .defaultSettings()
+                    .withCustomRootElementName("Model")
+                    .build().read(is, ModelSubset.class);
+
+            Assert.assertEquals(model.getSomeBoolean(), parsedModel.getSomeBoolean());
+            Assert.assertEquals(model.getSomeDouble(), parsedModel.getSomeDouble());
+            Assert.assertEquals(model.getSomeInteger(), parsedModel.getSomeInteger());
+            Assert.assertEquals(model.getSomeShort(), parsedModel.getSomeShort());
+            Assert.assertEquals(model.getSomeText(), parsedModel.getSomeText());
+            Assert.assertEquals(model.getSubTree().getSomeText(), parsedModel.getSubTree().getSomeText());
+            Assert.assertEquals(model.getSubTree().getSomeLong(), parsedModel.getSubTree().getSomeLong());
+
+        } catch (TolerantReaderException e) {
+            Assert.fail("Exception in Tolerant Reader: " + e.getMessage());
+        }
+    }
+
+    private InputStream toXmlStringInputStream(Object instance) {
         String xml = null;
         try {
-            xml = objectToXml(model);
+            xml = objectToXml(instance);
             System.out.println(xml);
         } catch (JAXBException e) {
             Assert.fail("Exception during marshalling: " + e.getMessage());

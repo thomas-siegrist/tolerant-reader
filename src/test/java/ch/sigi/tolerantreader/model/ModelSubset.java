@@ -7,7 +7,7 @@ package ch.sigi.tolerantreader.model;
 import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement
-public class Model {
+public class ModelSubset {
 
     private Boolean someBoolean;
     private String someText;
@@ -15,8 +15,7 @@ public class Model {
     private Integer someInteger;
     private Short someShort;
     private Double someDouble;
-    private Float someFloat;
-    private SubTree subTree;
+    private SubTreeSubset subTree;
 
     public void setSomeBoolean(Boolean someBoolean) {
         this.someBoolean = someBoolean;
@@ -62,24 +61,48 @@ public class Model {
         this.someDouble = someDouble;
     }
 
-    public Float getSomeFloat() {
-        return someFloat;
-    }
-
-    public void setSomeFloat(Float someFloat) {
-        this.someFloat = someFloat;
-    }
-
     public Boolean getSomeBoolean() {
         return someBoolean;
     }
 
-    public SubTree getSubTree() {
+    public SubTreeSubset getSubTree() {
         return subTree;
     }
 
-    public void setSubTree(SubTree subTree) {
+    public void setSubTree(SubTreeSubset subTree) {
         this.subTree = subTree;
+    }
+
+    public static final class Builder {
+        private Model model;
+
+        private Builder(Model model) {
+            this.model = model;
+        }
+
+        public static Builder withModel(Model model) {
+            return new Builder(model);
+        }
+
+        public ModelSubset build() {
+            ModelSubset modelSubset = new ModelSubset();
+            modelSubset.setSomeBoolean(model.getSomeBoolean());
+            modelSubset.setSomeDouble(model.getSomeDouble());
+            modelSubset.setSomeInteger(model.getSomeInteger());
+            modelSubset.setSomeLong(model.getSomeLong());
+            modelSubset.setSomeShort(model.getSomeShort());
+            modelSubset.setSomeText(model.getSomeText());
+            modelSubset.setSubTree(toSubTreeSubset(model.getSubTree()));
+            return modelSubset;
+        }
+
+        private SubTreeSubset toSubTreeSubset(SubTree subTree) {
+            SubTreeSubset subTreeSubset = new SubTreeSubset();
+            subTreeSubset.setSomeText(subTree.getSomeText());
+            subTreeSubset.setSomeLong(subTree.getSomeLong());
+            return subTreeSubset;
+        }
+
     }
 
     @Override
@@ -91,7 +114,6 @@ public class Model {
                 ", someInteger=" + someInteger +
                 ", someShort=" + someShort +
                 ", someDouble=" + someDouble +
-                ", someFloat=" + someFloat +
                 ", subTree=" + subTree +
                 '}';
     }
@@ -105,7 +127,7 @@ public class Model {
             return false;
         }
 
-        Model model = (Model) o;
+        ModelSubset model = (ModelSubset) o;
 
         if (someBoolean != null ? !someBoolean.equals(model.someBoolean) : model.someBoolean != null) {
             return false;
@@ -125,9 +147,6 @@ public class Model {
         if (someDouble != null ? !someDouble.equals(model.someDouble) : model.someDouble != null) {
             return false;
         }
-        if (someFloat != null ? !someFloat.equals(model.someFloat) : model.someFloat != null) {
-            return false;
-        }
         return !(subTree != null ? !subTree.equals(model.subTree) : model.subTree != null);
 
     }
@@ -140,17 +159,8 @@ public class Model {
         result = 31 * result + (someInteger != null ? someInteger.hashCode() : 0);
         result = 31 * result + (someShort != null ? someShort.hashCode() : 0);
         result = 31 * result + (someDouble != null ? someDouble.hashCode() : 0);
-        result = 31 * result + (someFloat != null ? someFloat.hashCode() : 0);
         result = 31 * result + (subTree != null ? subTree.hashCode() : 0);
         return result;
-    }
-
-    public ModelSubset subSet() {
-        return ModelSubset.Builder.withModel(this).build();
-    }
-
-    public ModelSuperset superSet() {
-        return ModelSuperset.Builder.withModel(this).build();
     }
 
 }
