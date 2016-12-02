@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -24,39 +22,31 @@ import javax.xml.xpath.XPathFactory;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import ch.sigi.tolerantreader.annotation.CustomName;
+import ch.sigi.tolerantreader.annotation.CustomPath;
 import ch.sigi.tolerantreader.exception.TolerantReaderException;
+import ch.sigi.tolerantreader.model.Node;
 
 import com.sun.org.apache.xml.internal.dtm.ref.DTMNodeList;
 
 public class TolerantXmlReader {
 
-
     public static final String STATRT_OF_EXPRESSION = "/";
     public static final String PATH_DELIMITER = "/";
 
-    private String rootElementName;
-
-    public String getRootElementName() {
-        return rootElementName;
-    }
-
-    public void setRootElementName(String rootElementName) {
-        this.rootElementName = rootElementName;
-    }
-
     public <T> T read(InputStream is, Class<T> clazz) throws TolerantReaderException {
-
-        prepareForClass(clazz);
 
         try {
             Document dom = createDomFor(is);
+            String rootElementName = rootElementName(clazz);
 
             T instance = clazz.getConstructor().newInstance();
 
             Field[] fields = clazz.getDeclaredFields();
             for (Field field : fields) {
                 String xPath = STATRT_OF_EXPRESSION + rootElementName + PATH_DELIMITER + field.getName();
-                Object value = readForObject(dom, xPath, field.getType(), getGenericTypeClass(field));
+                Node node = Node.Builder.forField(field).build();
+                Object value = readNodeForObject(dom, xPath, node);
 
                 clazz.getMethod(setterFor(field), field.getType()).invoke(instance, nullSafeCast(field.getType(), value));
             }
@@ -68,10 +58,15 @@ public class TolerantXmlReader {
         }
     }
 
-    private <T> void prepareForClass(Class<T> clazz) {
-        if (rootElementName == null)
+    private <T> String rootElementName(Class<T> clazz) {
+        String rootElementName;
+        CustomName[] customNames = clazz.getAnnotationsByType(CustomName.class);
+        if (customNames == null || customNames.length == 0)
             rootElementName = clazz.getSimpleName();
-        rootElementName = rootElementName.toLowerCase();
+        else {
+            rootElementName = customNames[0].value();
+        }
+        return rootElementName.toLowerCase();
     }
 
     private static Document createDomFor(InputStream is) throws IOException, SAXException, ParserConfigurationException {
@@ -80,63 +75,66 @@ public class TolerantXmlReader {
         return builder.parse(is);
     }
 
-    private static Class getGenericTypeClass(Field field) {
-        Type returnType = field.getGenericType();
-        if (returnType instanceof ParameterizedType) {
-            ParameterizedType paramType = (ParameterizedType) returnType;
-            Type[] argTypes = paramType.getActualTypeArguments();
-            if (argTypes.length > 0) {
-                return (Class<?>) argTypes[0];
-            }
-        }
-        return null;
-    }
-
-    private static <T> Object readForObject(Document dom, String xPath, Class<T> returnType, Class<T> genericTypeClazz) throws TolerantReaderException, XPathExpressionException,
+    private static <T> Object readNodeForObject(Document dom, String xPath, Node node) throws TolerantReaderException, XPathExpressionException,
             InvocationTargetException, NoSuchMethodException, ClassNotFoundException, InstantiationException, IllegalAccessException {
 
-        if (returnType.isPrimitive())
-            throw new TolerantReaderException("Mate, common!! Don't use primitive types (" + returnType.getSimpleName()
+        Class nodeType = node.getType();
+        if (nodeType.isPrimitive())
+            throw new TolerantReaderException("Mate, common!! Don't use primitive types (" + nodeType.getSimpleName()
                     + ") in a TolerantReader Model-Class. Every field must be nullable in order to be tolerant. Agree ?  ;-)");
 
+        xPath = overrideWithValuesFromAnnotationsIfAny(xPath, node);
+        XPathExpression xPathExpression = compileXPath(xPath);
 
-        XPathExpression xPathExpression = XPathFactory.newInstance().newXPath().compile(xPath);
         if (!xPathExists(dom, xPathExpression))
             return null;
 
-        if (Boolean.class.isAssignableFrom(returnType)) {
+        if (Boolean.class.isAssignableFrom(nodeType)) {
             return Boolean.valueOf((String) xPathExpression.evaluate(dom, XPathConstants.STRING));
         }
-        if (Number.class.isAssignableFrom(returnType)) {
+        if (Number.class.isAssignableFrom(nodeType)) {
             Double doubleValue = (Double) xPathExpression.evaluate(dom, XPathConstants.NUMBER);
-            if (Long.class.isAssignableFrom(returnType)) {
+            if (Long.class.isAssignableFrom(nodeType)) {
                 return doubleValue == null ? null : doubleValue.longValue();
             }
-            if (Integer.class.isAssignableFrom(returnType)) {
+            if (Integer.class.isAssignableFrom(nodeType)) {
                 return doubleValue == null ? null : doubleValue.intValue();
             }
-            if (Short.class.isAssignableFrom(returnType)) {
+            if (Short.class.isAssignableFrom(nodeType)) {
                 return doubleValue == null ? null : doubleValue.shortValue();
             }
-            if (Float.class.isAssignableFrom(returnType)) {
+            if (Float.class.isAssignableFrom(nodeType)) {
                 return doubleValue == null ? null : doubleValue.floatValue();
             }
             // Default for Numbers is Double.class
             return doubleValue;
         }
-        if (String.class.isAssignableFrom(returnType)) {
+        if (String.class.isAssignableFrom(nodeType)) {
             return xPathExpression.evaluate(dom, XPathConstants.STRING);
         }
-        if (Collection.class.isAssignableFrom(returnType)) {
+        if (Collection.class.isAssignableFrom(nodeType)) {
             Collection collection = new ArrayList<>();
             DTMNodeList nodes = (DTMNodeList) xPathExpression.evaluate(dom, XPathConstants.NODESET);
             for (int i = 1; i <= nodes.getLength(); i++) {
-                collection.add(readForObject(dom, xPath + "[" + i + "]", genericTypeClazz, null));
+                Node nodeWithinCollection = Node.Builder.forType(node.getGenericType()).build();
+                collection.add(readNodeForObject(dom, xPath + "[" + i + "]", nodeWithinCollection));
             }
             return collection;
         }
 
-        return recursiveProcessSubtree(dom, xPath, returnType);
+        return recursiveProcessSubtree(dom, xPath, nodeType);
+    }
+
+    private static String overrideWithValuesFromAnnotationsIfAny(String xPath, Node node) {
+        CustomPath customPath = node.getCustomPath();
+        CustomName customName = node.getCustomName();
+        XPathExpression xPathExpression;
+        if (customPath != null) {
+            xPath = customPath.value();
+        } else if (customName != null) {
+            xPath = xPath.substring(0, xPath.lastIndexOf("/") + 1) + customName.value();
+        }
+        return xPath;
     }
 
     private static boolean xPathExists(Document dom, XPathExpression xPathExpression) throws XPathExpressionException {
@@ -151,10 +149,15 @@ public class TolerantXmlReader {
         Field[] fields = returnType.getDeclaredFields();
         for (Field field : fields) {
             String xPathToSubtree = xPath + "/" + field.getName();
-            Object value = readForObject(dom, xPathToSubtree, field.getType(), getGenericTypeClass(field));
+            Node node = Node.Builder.forField(field).build();
+            Object value = readNodeForObject(dom, xPathToSubtree, node);
             returnType.getMethod(setterFor(field), field.getType()).invoke(instance, nullSafeCast(field.getType(), value));
         }
         return instance;
+    }
+
+    private static XPathExpression compileXPath(String xPath) throws XPathExpressionException {
+        return XPathFactory.newInstance().newXPath().compile(xPath);
     }
 
     private static String setterFor(Field field) {
@@ -170,6 +173,11 @@ public class TolerantXmlReader {
         return value == null ? null : clazz.cast(value);
     }
 
+    /**
+     * ******************************************************************************************************
+     * The Builder (for config-options)
+     * ******************************************************************************************************
+     */
     public static final class Builder {
 
         private String rootElementName;
@@ -178,20 +186,10 @@ public class TolerantXmlReader {
             return new Builder();
         }
 
-        public Builder withRootElementNameAsClassName() {
-            rootElementName = null;
-            return this;
-        }
-
-        public Builder withCustomRootElementName(String name) {
-            rootElementName = name;
-            return this;
-        }
+        // We don't habe config-options yet
 
         public TolerantXmlReader build() {
-            TolerantXmlReader tolerantXmlReader = new TolerantXmlReader();
-            tolerantXmlReader.setRootElementName(rootElementName);
-            return tolerantXmlReader;
+            return new TolerantXmlReader();
         }
 
     }

@@ -4,9 +4,12 @@
 
 package ch.sigi.tolerantreader.model;
 
+import ch.sigi.tolerantreader.annotation.CustomName;
+
 import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement
+@CustomName("Model")
 public class ModelSuperset {
 
     private String someAdditionalField;

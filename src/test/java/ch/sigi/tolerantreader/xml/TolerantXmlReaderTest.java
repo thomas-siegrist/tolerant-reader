@@ -21,6 +21,8 @@ import ch.sigi.tolerantreader.exception.TolerantReaderException;
 import ch.sigi.tolerantreader.model.Model;
 import ch.sigi.tolerantreader.model.ModelSubset;
 import ch.sigi.tolerantreader.model.ModelSuperset;
+import ch.sigi.tolerantreader.model.ModelWithAnnotations;
+import ch.sigi.tolerantreader.model.ModelWithInvalidAnnotations;
 import ch.sigi.tolerantreader.model.SubTree;
 
 public class TolerantXmlReaderTest {
@@ -33,9 +35,11 @@ public class TolerantXmlReaderTest {
         try {
             Model parsedModel = TolerantXmlReader.Builder
                     .defaultSettings()
-                    .build().read(is, Model.class);
+                    .build()
+                    .read(is, Model.class);
 
             Assert.assertEquals(model, parsedModel);
+
         } catch (TolerantReaderException e) {
             Assert.fail("Exception in Tolerant Reader: " + e.getMessage());
         }
@@ -49,8 +53,8 @@ public class TolerantXmlReaderTest {
         try {
             ModelSuperset parsedModel = TolerantXmlReader.Builder
                     .defaultSettings()
-                    .withCustomRootElementName("Model")
-                    .build().read(is, ModelSuperset.class);
+                    .build()
+                    .read(is, ModelSuperset.class);
 
             Assert.assertEquals(model.getSomeBoolean(), parsedModel.getSomeBoolean());
             Assert.assertEquals(model.getSomeDouble(), parsedModel.getSomeDouble());
@@ -78,8 +82,8 @@ public class TolerantXmlReaderTest {
         try {
             ModelSubset parsedModel = TolerantXmlReader.Builder
                     .defaultSettings()
-                    .withCustomRootElementName("Model")
-                    .build().read(is, ModelSubset.class);
+                    .build()
+                    .read(is, ModelSubset.class);
 
             Assert.assertEquals(model.getSomeBoolean(), parsedModel.getSomeBoolean());
             Assert.assertEquals(model.getSomeDouble(), parsedModel.getSomeDouble());
@@ -92,6 +96,42 @@ public class TolerantXmlReaderTest {
         } catch (TolerantReaderException e) {
             Assert.fail("Exception in Tolerant Reader: " + e.getMessage());
         }
+    }
+
+    @Test
+    public void testAModelWithAnnotations() {
+        Model model = exampleModel();
+        InputStream is = toXmlStringInputStream(model);
+
+        try {
+            ModelWithAnnotations parsedModel = TolerantXmlReader.Builder
+                    .defaultSettings()
+                    .build()
+                    .read(is, ModelWithAnnotations.class);
+
+            Assert.assertEquals(model.getSomeText(), parsedModel.getSomeCustomFieldName());
+            Assert.assertEquals(model.getSomeBoolean(), parsedModel.getSomeBoolean());
+            Assert.assertEquals(model.getSubTree().getSomeText(), parsedModel.getSubTreeText());
+            Assert.assertEquals(model.getSubTree().getSomeLong(), parsedModel.getSubTreeLong());
+            Assert.assertEquals(model.getSubTree().getSomeList().toArray(), parsedModel.getSubTreeList().toArray());
+            Assert.assertNull(parsedModel.getInexistent());
+            Assert.assertNull(parsedModel.getSomeInexistendCustomField());
+
+        } catch (TolerantReaderException e) {
+            Assert.fail("Exception in Tolerant Reader: " + e.getMessage());
+        }
+    }
+
+    @Test(expected = TolerantReaderException.class)
+    public void testAModelWithInvalidAnnotations() throws TolerantReaderException {
+        Model model = exampleModel();
+        InputStream is = toXmlStringInputStream(model);
+
+        TolerantXmlReader.Builder
+                .defaultSettings()
+                .build()
+                .read(is, ModelWithInvalidAnnotations.class);
+        Assert.fail("TolerantReaderException Exception expected, due to invalid Annotations!");
     }
 
     private InputStream toXmlStringInputStream(Object instance) {

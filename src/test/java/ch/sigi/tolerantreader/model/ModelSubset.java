@@ -6,7 +6,10 @@ package ch.sigi.tolerantreader.model;
 
 import javax.xml.bind.annotation.XmlRootElement;
 
+import ch.sigi.tolerantreader.annotation.CustomName;
+
 @XmlRootElement
+@CustomName("Model")
 public class ModelSubset {
 
     private Boolean someBoolean;
