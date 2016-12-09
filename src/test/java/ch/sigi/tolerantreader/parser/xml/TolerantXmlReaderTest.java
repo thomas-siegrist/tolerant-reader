@@ -2,7 +2,7 @@
  * Copyright (C) Schweizerische Bundesbahnen SBB, 2016.
  */
 
-package ch.sigi.tolerantreader.xml;
+package ch.sigi.tolerantreader.parser.xml;
 
 import java.io.InputStream;
 import java.io.StringWriter;

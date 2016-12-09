@@ -2,14 +2,16 @@
  * Copyright (C) Schweizerische Bundesbahnen SBB, 2016.
  */
 
-package ch.sigi.tolerantreader.xml;
+package ch.sigi.tolerantreader.parser.xml;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Collection;
+import ch.sigi.tolerantreader.annotation.CustomName;
+import ch.sigi.tolerantreader.annotation.CustomPath;
+import ch.sigi.tolerantreader.exception.TolerantReaderException;
+import ch.sigi.tolerantreader.model.Node;
+import ch.sigi.tolerantreader.parser.TolerantReader;
+import com.sun.org.apache.xml.internal.dtm.ref.DTMNodeList;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -18,22 +20,23 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Collection;
 
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
-
-import ch.sigi.tolerantreader.annotation.CustomName;
-import ch.sigi.tolerantreader.annotation.CustomPath;
-import ch.sigi.tolerantreader.exception.TolerantReaderException;
-import ch.sigi.tolerantreader.model.Node;
-
-import com.sun.org.apache.xml.internal.dtm.ref.DTMNodeList;
-
-public class TolerantXmlReader {
+public class TolerantXmlReader extends TolerantReader {
 
     public static final String STATRT_OF_EXPRESSION = "/";
     public static final String PATH_DELIMITER = "/";
 
+    public TolerantXmlReader() {
+        super(PATH_DELIMITER);
+    }
+
+    @Override
     public <T> T read(InputStream is, Class<T> clazz) throws TolerantReaderException {
 
         try {
@@ -58,24 +61,13 @@ public class TolerantXmlReader {
         }
     }
 
-    private <T> String rootElementName(Class<T> clazz) {
-        String rootElementName;
-        CustomName[] customNames = clazz.getAnnotationsByType(CustomName.class);
-        if (customNames == null || customNames.length == 0)
-            rootElementName = clazz.getSimpleName();
-        else {
-            rootElementName = customNames[0].value();
-        }
-        return rootElementName.toLowerCase();
-    }
-
-    private static Document createDomFor(InputStream is) throws IOException, SAXException, ParserConfigurationException {
+    private Document createDomFor(InputStream is) throws IOException, SAXException, ParserConfigurationException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
         return builder.parse(is);
     }
 
-    private static <T> Object readNodeForObject(Document dom, String xPath, Node node) throws TolerantReaderException, XPathExpressionException,
+    private <T> Object readNodeForObject(Document dom, String xPath, Node node) throws TolerantReaderException, XPathExpressionException,
             InvocationTargetException, NoSuchMethodException, ClassNotFoundException, InstantiationException, IllegalAccessException {
 
         Class nodeType = node.getType();
@@ -125,24 +117,12 @@ public class TolerantXmlReader {
         return recursiveProcessSubtree(dom, xPath, nodeType);
     }
 
-    private static String overrideWithValuesFromAnnotationsIfAny(String xPath, Node node) {
-        CustomPath customPath = node.getCustomPath();
-        CustomName customName = node.getCustomName();
-        XPathExpression xPathExpression;
-        if (customPath != null) {
-            xPath = customPath.value();
-        } else if (customName != null) {
-            xPath = xPath.substring(0, xPath.lastIndexOf("/") + 1) + customName.value();
-        }
-        return xPath;
-    }
-
-    private static boolean xPathExists(Document dom, XPathExpression xPathExpression) throws XPathExpressionException {
+    private boolean xPathExists(Document dom, XPathExpression xPathExpression) throws XPathExpressionException {
         DTMNodeList nodeList = (DTMNodeList) xPathExpression.evaluate(dom, XPathConstants.NODESET);
         return nodeList != null && nodeList.getLength() > 0;
     }
 
-    private static <T> T recursiveProcessSubtree(Document dom, String xPath, Class<T> returnType) throws InstantiationException, IllegalAccessException, InvocationTargetException,
+    private <T> T recursiveProcessSubtree(Document dom, String xPath, Class<T> returnType) throws InstantiationException, IllegalAccessException, InvocationTargetException,
             NoSuchMethodException,
             XPathExpressionException, ClassNotFoundException, TolerantReaderException {
         T instance = returnType.getConstructor().newInstance();
@@ -156,21 +136,8 @@ public class TolerantXmlReader {
         return instance;
     }
 
-    private static XPathExpression compileXPath(String xPath) throws XPathExpressionException {
+    private XPathExpression compileXPath(String xPath) throws XPathExpressionException {
         return XPathFactory.newInstance().newXPath().compile(xPath);
-    }
-
-    private static String setterFor(Field field) {
-        return "set" + firstLetterUppercased(field.getName());
-    }
-
-    private static String firstLetterUppercased(String string) {
-        String firstCharacter = string.substring(0, 1);
-        return string.replaceFirst(firstCharacter, firstCharacter.toUpperCase());
-    }
-
-    private static <T> T nullSafeCast(Class<T> clazz, Object value) {
-        return value == null ? null : clazz.cast(value);
     }
 
     /**
@@ -179,8 +146,6 @@ public class TolerantXmlReader {
      * ******************************************************************************************************
      */
     public static final class Builder {
-
-        private String rootElementName;
 
         public static Builder defaultSettings() {
             return new Builder();
