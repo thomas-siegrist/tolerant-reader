@@ -5,6 +5,7 @@ import ch.sigi.tolerantreader.document.Document;
 import ch.sigi.tolerantreader.exception.DocumentReadException;
 import ch.sigi.tolerantreader.model.Node;
 import com.sun.org.apache.xml.internal.dtm.ref.DTMNodeList;
+import org.apache.commons.io.input.CharSequenceInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.w3c.dom.NodeList;
 
@@ -15,6 +16,7 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -178,11 +180,6 @@ public class XmlDocument<T> implements Document<T> {
      * The Builder
      * ******************************************************************************************************
      */
-    /**
-     * ******************************************************************************************************
-     * The Builder
-     * ******************************************************************************************************
-     */
     public static final class Builder {
         private Class clazz;
 
@@ -196,6 +193,14 @@ public class XmlDocument<T> implements Document<T> {
 
         public BuilderForInputStream withInputStream(InputStream inputStream) {
             return new BuilderForInputStream(clazz, inputStream);
+        }
+
+        public BuilderForInputStream withInputString(String inputString) {
+            return new BuilderForInputStream(clazz, toStringInputStream(inputString));
+        }
+
+        private InputStream toStringInputStream(String str) {
+            return new CharSequenceInputStream(str, StandardCharsets.UTF_8);
         }
 
         // Nested inner static class for Fluent-API:

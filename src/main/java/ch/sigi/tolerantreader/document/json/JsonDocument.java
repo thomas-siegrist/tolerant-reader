@@ -7,8 +7,10 @@ import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.PathNotFoundException;
+import org.apache.commons.io.input.CharSequenceInputStream;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 
 /**
@@ -122,6 +124,14 @@ public class JsonDocument<T> implements Document<T> {
 
         public BuilderForInputStream withInputStream(InputStream inputStream) {
             return new BuilderForInputStream(clazz, inputStream);
+        }
+
+        public BuilderForInputStream withInputString(String inputString) {
+            return new BuilderForInputStream(clazz, toStringInputStream(inputString));
+        }
+
+        private InputStream toStringInputStream(String str) {
+            return new CharSequenceInputStream(str, StandardCharsets.UTF_8);
         }
 
         // Nested inner static class for Fluent-API:
