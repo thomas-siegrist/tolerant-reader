@@ -2,27 +2,25 @@
  * Copyright (C) Schweizerische Bundesbahnen SBB, 2016.
  */
 
-package ch.sigi.tolerantreader.parser.xml;
+package ch.sigi.tolerantreader.parser.json;
 
 import ch.sigi.tolerantreader.TolerantReader;
 import ch.sigi.tolerantreader.document.Document;
-import ch.sigi.tolerantreader.document.xml.XmlDocument;
+import ch.sigi.tolerantreader.document.json.JsonDocument;
 import ch.sigi.tolerantreader.exception.TolerantReaderException;
 import ch.sigi.tolerantreader.model.Model;
-import ch.sigi.tolerantreader.model.ModelWithXPathAnnotations;
+import ch.sigi.tolerantreader.model.ModelWithJsonPathAnnotations;
 import ch.sigi.tolerantreader.parser.TolerantReaderBaseTest;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.input.CharSequenceInputStream;
 import org.junit.Assert;
 import org.junit.Test;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
 import java.io.InputStream;
-import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 
-public class TolerantXmlReaderTest extends TolerantReaderBaseTest {
+public class TolerantJsonReaderTest extends TolerantReaderBaseTest {
 
     @Test
     public void testAModelWithAnnotations() {
@@ -30,10 +28,10 @@ public class TolerantXmlReaderTest extends TolerantReaderBaseTest {
         InputStream is = objectToInputStream(model);
 
         try {
-            ModelWithXPathAnnotations parsedModel = TolerantReader.Builder
+            ModelWithJsonPathAnnotations parsedModel = TolerantReader.Builder
                     .defaultSettings()
                     .build()
-                    .read(documentFor(is, ModelWithXPathAnnotations.class));
+                    .read(documentFor(is, ModelWithJsonPathAnnotations.class));
 
             Assert.assertEquals(model.getSomeText(), parsedModel.getSomeCustomFieldName());
             Assert.assertEquals(model.getSomeBoolean(), parsedModel.getSomeBoolean());
@@ -50,7 +48,7 @@ public class TolerantXmlReaderTest extends TolerantReaderBaseTest {
 
     @Override
     protected <T> Document<T> documentFor(InputStream is, Class<T> clazz) {
-        return XmlDocument.Builder
+        return JsonDocument.Builder
                 .forClass(clazz)
                 .withInputStream(is)
                 .build();
@@ -58,31 +56,26 @@ public class TolerantXmlReaderTest extends TolerantReaderBaseTest {
 
     @Override
     protected InputStream objectToInputStream(Object object) {
-        return toXmlStringInputStream(object);
+        return toJsonStringInputStream(object);
     }
 
-    private InputStream toXmlStringInputStream(Object instance) {
+    private InputStream toJsonStringInputStream(Object instance) {
         String xml = null;
         try {
-            xml = objectToXml(instance);
+            xml = objectToJson(instance);
             System.out.println(xml);
-        } catch (JAXBException e) {
+        } catch (JsonProcessingException e) {
             Assert.fail("Exception during marshalling: " + e.getMessage());
         }
         return toStringInputStream(xml);
     }
 
-    private <T> String objectToXml(T o) throws JAXBException {
-        JAXBContext jaxbContext = JAXBContext.newInstance(o.getClass());
-        Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
-        StringWriter sw = new StringWriter();
-        jaxbMarshaller.marshal(o, sw);
-        sw.flush();
-        return sw.toString();
-    }
-
     private InputStream toStringInputStream(String str) {
         return new CharSequenceInputStream(str, StandardCharsets.UTF_8);
+    }
+
+    private <T> String objectToJson(T o) throws JsonProcessingException {
+        return new ObjectMapper().writeValueAsString(o);
     }
 
 }

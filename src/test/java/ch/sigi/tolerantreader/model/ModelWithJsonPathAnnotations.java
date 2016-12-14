@@ -4,13 +4,13 @@
 
 package ch.sigi.tolerantreader.model;
 
-import java.util.List;
-
 import ch.sigi.tolerantreader.annotation.CustomName;
 import ch.sigi.tolerantreader.annotation.CustomPath;
 
+import java.util.List;
+
 @CustomName("Model")
-public class ModelWithAnnotations {
+public class ModelWithJsonPathAnnotations {
 
     private Boolean someBoolean;
 
@@ -20,16 +20,16 @@ public class ModelWithAnnotations {
     @CustomName("inexistent")
     private String someInexistendCustomField;
 
-    @CustomPath("/model/subTree/someText")
+    @CustomPath("$.subTree.someText")
     private String subTreeText;
 
-    @CustomPath("/model/subTree/someLong")
+    @CustomPath("$.subTree.someLong")
     private Long subTreeLong;
 
-    @CustomPath("/model/subTree/someList")
+    @CustomPath("$.subTree.someList")
     private List<String> subTreeList;
 
-    @CustomPath("/model/inexistent")
+    @CustomPath("$.inexistent")
     private SubTree inexistent;
 
     public Boolean getSomeBoolean() {

@@ -6,8 +6,6 @@ package ch.sigi.tolerantreader.model;
 
 import javax.xml.bind.annotation.XmlRootElement;
 
-import ch.sigi.tolerantreader.annotation.CustomPath;
-
 @XmlRootElement
 public class Model {
 
