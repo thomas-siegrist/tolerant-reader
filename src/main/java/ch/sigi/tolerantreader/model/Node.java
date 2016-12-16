@@ -10,29 +10,43 @@ import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
-import ch.sigi.tolerantreader.annotation.CustomPath;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+
 import org.apache.commons.lang3.Validate;
 
 import ch.sigi.tolerantreader.annotation.CustomName;
+import ch.sigi.tolerantreader.annotation.CustomPath;
 
 public class Node implements Serializable {
 
+    private final String name;
     private final Class type;
     private final Class genericType;
     private final CustomPath customPath;
     private final CustomName customName;
+    private final Pattern validateRegex;
+    private final NotNull validateNotNull;
 
     /**
+     * @param name
      * @param type not <code>null</code>
      * @param genericType nullable
      * @param customPath nullable
      * @param customName nullable
      */
-    private Node(Class type, Class genericType, CustomPath customPath, CustomName customName) {
+    private Node(String name, Class type, Class genericType, CustomPath customPath, CustomName customName, Pattern validateRegex, NotNull validateNotNull) {
+        this.name = name;
         this.type = Validate.notNull(type);
         this.genericType = genericType;
         this.customPath = customPath;
         this.customName = customName;
+        this.validateRegex = validateRegex;
+        this.validateNotNull = validateNotNull;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public Class getType() {
@@ -51,6 +65,14 @@ public class Node implements Serializable {
         return customName;
     }
 
+    public Pattern getValidateRegex() {
+        return validateRegex;
+    }
+
+    public NotNull getValidateNotNull() {
+        return validateNotNull;
+    }
+
     /**
      * ******************************************************************************************************
      * The Builder
@@ -58,20 +80,26 @@ public class Node implements Serializable {
      */
     public static final class Builder {
 
+        private String name;
         private Class type;
         private Class genericType;
         private CustomPath customPath;
         private CustomName customName;
+        private Pattern validateRegex;
+        private NotNull validateNotNull;
 
         /**
          * @param field not <code>null</code>
          */
         public static Builder forField(Field field) {
             Builder builder = new Builder();
+            builder.name = field.getName();
             builder.type = Validate.notNull(field.getType());
             builder.genericType = getGenericTypeClass(field);
             builder.customPath = getAnnotationOfType(field, CustomPath.class);
             builder.customName = getAnnotationOfType(field, CustomName.class);
+            builder.validateRegex = getAnnotationOfType(field, Pattern.class);
+            builder.validateNotNull = getAnnotationOfType(field, NotNull.class);
 
             if (builder.customName != null && builder.customPath != null) {
                 throw new IllegalArgumentException("You can only use ONE Annotation out of [@CustomName, @CustomPath] per field.");
@@ -89,19 +117,24 @@ public class Node implements Serializable {
 
         /**
          * @param type not <code>null</code>
+         * @param name not <code>null</code>
          */
-        public static Builder forType(Class type) {
+        public static Builder forTypeAndName(Class type, String name) {
             Builder builder = new Builder();
             builder.type = Validate.notNull(type);
+            builder.name = name;
             return builder;
         }
 
         public Node build() {
             return new Node(
+                    name,
                     type,
                     genericType,
                     customPath,
-                    customName);
+                    customName,
+                    validateRegex,
+                    validateNotNull);
         }
 
         private static Class getGenericTypeClass(Field field) {

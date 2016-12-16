@@ -1,14 +1,21 @@
 package ch.sigi.tolerantreader.parser;
 
-import ch.sigi.tolerantreader.TolerantReader;
-import ch.sigi.tolerantreader.document.Document;
-import ch.sigi.tolerantreader.exception.TolerantReaderException;
-import ch.sigi.tolerantreader.model.*;
+import java.io.InputStream;
+import java.util.Arrays;
+
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.InputStream;
-import java.util.Arrays;
+import ch.sigi.tolerantreader.TolerantReader;
+import ch.sigi.tolerantreader.document.Document;
+import ch.sigi.tolerantreader.exception.TolerantReaderException;
+import ch.sigi.tolerantreader.exception.ValidationException;
+import ch.sigi.tolerantreader.model.Model;
+import ch.sigi.tolerantreader.model.ModelSubset;
+import ch.sigi.tolerantreader.model.ModelSuperset;
+import ch.sigi.tolerantreader.model.ModelSupersetWithValidations;
+import ch.sigi.tolerantreader.model.ModelWithInvalidAnnotations;
+import ch.sigi.tolerantreader.model.SubTree;
 
 /**
  * Created by thomas on 11.12.16.
@@ -99,7 +106,61 @@ public abstract class TolerantReaderBaseTest {
                 .defaultSettings()
                 .build()
                 .read(documentFor(is, ModelWithInvalidAnnotations.class));
-        Assert.fail("TolerantReaderException Exception expected, due to invalid Annotations!");
+    }
+
+    @Test
+    public void testAModelWithSuccessfulValidations() throws TolerantReaderException {
+        Model model = exampleModel();
+        InputStream is = objectToInputStream(model);
+
+        try {
+            TolerantReader.Builder
+                    .defaultSettings()
+                    .build()
+                    .read(documentFor(is, ModelSupersetWithValidations.class));
+        } catch (TolerantReaderException e) {
+            Assert.fail("Exception in Tolerant Reader: " + e.getMessage());
+        }
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testAModelWithNotFulfilledNotNullValidation() throws Throwable {
+        Model model = exampleModel();
+
+        // Invalidate the Content of the Model
+        model.setSomeBoolean(null);
+
+        InputStream is = objectToInputStream(model);
+
+        try {
+            TolerantReader.Builder
+                    .defaultSettings()
+                    .build()
+                    .read(documentFor(is, ModelSupersetWithValidations.class));
+        } catch (TolerantReaderException e) {
+            e.printStackTrace();
+            throw e.getCause();
+        }
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testAModelWithNotFulfilledRegexValidation() throws Throwable {
+        Model model = exampleModel();
+
+        // Invalidate the Content of the Model
+        model.setSomeText(";Some$Invalid&Characters;");
+
+        InputStream is = objectToInputStream(model);
+
+        try {
+            TolerantReader.Builder
+                    .defaultSettings()
+                    .build()
+                    .read(documentFor(is, ModelSupersetWithValidations.class));
+        } catch (TolerantReaderException e) {
+            e.printStackTrace();
+            throw e.getCause();
+        }
     }
 
     protected Model exampleModel() {

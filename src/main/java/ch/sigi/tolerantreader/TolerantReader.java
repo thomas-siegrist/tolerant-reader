@@ -4,21 +4,33 @@
 
 package ch.sigi.tolerantreader;
 
-import ch.sigi.tolerantreader.annotation.CustomName;
-import ch.sigi.tolerantreader.annotation.CustomPath;
-import ch.sigi.tolerantreader.document.Document;
-import ch.sigi.tolerantreader.exception.DocumentReadException;
-import ch.sigi.tolerantreader.exception.TolerantReaderException;
-import ch.sigi.tolerantreader.model.Node;
-import com.jayway.jsonpath.PathNotFoundException;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import ch.sigi.tolerantreader.annotation.CustomName;
+import ch.sigi.tolerantreader.annotation.CustomPath;
+import ch.sigi.tolerantreader.document.Document;
+import ch.sigi.tolerantreader.exception.DocumentReadException;
+import ch.sigi.tolerantreader.exception.TolerantReaderException;
+import ch.sigi.tolerantreader.exception.ValidationException;
+import ch.sigi.tolerantreader.model.Node;
+import ch.sigi.tolerantreader.validation.Validator;
+import ch.sigi.tolerantreader.validation.impl.DefaultValidator;
+
+import com.jayway.jsonpath.PathNotFoundException;
+
 public class TolerantReader {
+
+    private final boolean validate;
+    private final Validator validator;
+
+    public TolerantReader(boolean validate, Validator validator) {
+        this.validate = validate;
+        this.validator = validator;
+    }
 
     public <T> T read(Document<T> document) throws TolerantReaderException {
 
@@ -33,6 +45,7 @@ public class TolerantReader {
                 String path = document.getRootNodeIdentifier() + field.getName();
                 Node node = Node.Builder.forField(field).build();
                 Object value = readNodeForObject(document, path, node);
+                validate(value, node);
 
                 clazz.getMethod(setterFor(field), field.getType()).invoke(instance, nullSafeCast(field.getType(), value));
             }
@@ -44,7 +57,9 @@ public class TolerantReader {
         }
     }
 
-    private Object readNodeForObject(Document document, String path, Node node) throws TolerantReaderException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, PathNotFoundException, DocumentReadException {
+    private Object readNodeForObject(Document document, String path, Node node)
+            throws TolerantReaderException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, PathNotFoundException, DocumentReadException,
+            ValidationException {
 
         Class nodeType = node.getType();
         if (nodeType.isPrimitive())
@@ -64,7 +79,7 @@ public class TolerantReader {
                 List<?> nodes = (List) nodeValue;
                 int firstIndex = document.getIndexOfFirstElementInCollections();
                 for (int i = firstIndex; i < nodes.size() + firstIndex; i++) {
-                    Node nodeWithinCollection = Node.Builder.forType(node.getGenericType()).build();
+                    Node nodeWithinCollection = Node.Builder.forTypeAndName(node.getGenericType(), node.getName()).build();
                     collection.add(readNodeForObject(document, path + "[" + i + "]", nodeWithinCollection));
                 }
                 return collection;
@@ -77,6 +92,11 @@ public class TolerantReader {
         return recursiveProcessSubtree(document, path, nodeType);
     }
 
+    private void validate(Object nodeValue, Node node) throws ValidationException {
+        if (validate)
+            validator.validate(nodeValue, node);
+    }
+
     private boolean isStandardJavaClassOrCollection(Class type) {
         return Number.class.isAssignableFrom(type) ||
                 String.class.isAssignableFrom(type) ||
@@ -86,7 +106,8 @@ public class TolerantReader {
                 Collection.class.isAssignableFrom(type);
     }
 
-    private <T> T recursiveProcessSubtree(Document document, String path, Class<T> returnType) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, TolerantReaderException, DocumentReadException {
+    private <T> T recursiveProcessSubtree(Document document, String path, Class<T> returnType)
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException, TolerantReaderException, DocumentReadException, ValidationException {
         T instance = returnType.getConstructor().newInstance();
         Field[] fields = returnType.getDeclaredFields();
         for (Field field : fields) {
@@ -129,14 +150,30 @@ public class TolerantReader {
      */
     public static final class Builder {
 
-        public static Builder defaultSettings() {
-            return new Builder();
+        private boolean validate;
+        private Validator validator;
+
+        public Builder(boolean validate, DefaultValidator validator) {
+            this.validate = validate;
+            this.validator = validator;
         }
 
-        // We don't have config-options yet
+        public static Builder defaultSettings() {
+            return new Builder(true, new DefaultValidator());
+        }
+
+        public Builder validate(boolean validate) {
+            this.validate = validate;
+            return this;
+        }
+
+        public Builder validator(Validator validator) {
+            this.validator = validator;
+            return this;
+        }
 
         public TolerantReader build() {
-            return new TolerantReader();
+            return new TolerantReader(validate, validator);
         }
 
     }
