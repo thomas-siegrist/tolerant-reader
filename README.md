@@ -20,6 +20,32 @@ Model model = TolerantReader.Builder
                     .build()
                     .read(document);
 ```
+## Customization
+### Custom names
+The Tolerant reader, by default, uses the field-names in order to build the Path to the leaf-elements. But you can override these values with a custom value. The Tolerant reader searches with the given name for the element in the XML / Json String. You can put the @CustomName Annotation over a field, or also over the class to declare how the root-element is being called (this takes only effect in XML, because Json does not explicitly declare the root elements).
+
+```java
+    @CustomName("theEffectiveNameOfTheFieldInTheInputSource")
+    private String someCustomFieldNameInTheJavaModel;
+```
+### Custom paths
+The Tolerant reader, by default, goes through the model-class and puts together the path to find the value in the input-source. But you can explicitly override this path with a custom value. It must be a valid JsonPath / XPath Expression. The Tolerant reader searches the XML / Json String with the given path. You can put the @CustomPath Annotation over a field. When you point to a subtree, the whole subtree is parsed by using the given path to the root of the subtree. The paths can be absolute or relative. When you use relative paths you are even more tolerant, because the element could be moved within the tree and still matches your given mode-class.
+
+**An XML-Example with an absolute path:**
+```java
+...
+    @CustomPath("/model/subTree/someText")
+    private String subTreeText;
+...
+```
+
+**A Json Example with an absolute path:**
+```java
+...
+    @CustomPath("$.subTree.someText")
+    private String subTreeText;
+...
+```
 
 ## Validation
 ### Declaration
