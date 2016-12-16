@@ -26,6 +26,7 @@ Model model = TolerantReader.Builder
 In the Model-Class you can validate the output of the Parser at runtime with the following Annotations:
 - javax.validation.constraints.NotNull
 - javax.validation.constraints.Pattern
+
 You must put the Annotations on the field that you want to validate.
 ```java
 ...
@@ -52,6 +53,7 @@ In the current state, we provide JsonDocument and XmlDocument. De code is set-up
 ## Latest changes
 * Refactor code, that it will be reusable for JSON-Parsing
 * Write the same logic for tolerant reading JSON
+* Introduce Field-Validations
 
 ## TODOs
 * Performance-Improvements / Optimizations through working with Tree-Oriented Frameworks instead of XPath / JsonPath:
