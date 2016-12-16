@@ -29,7 +29,7 @@ The Tolerant reader, by default, uses the field-names in order to build the Path
     private String someCustomFieldNameInTheJavaModel;
 ```
 ### Custom paths
-The Tolerant reader, by default, goes through the model-class and puts together the path to find the value in the input-source. But you can explicitly override this path with a custom value. It must be a valid JsonPath / XPath Expression. The Tolerant reader searches the XML / Json String with the given path. You can put the @CustomPath Annotation over a field. When you point to a subtree, the whole subtree is parsed by using the given path to the root of the subtree. The paths can be absolute or relative. When you use relative paths you are even more tolerant, because the element could be moved within the tree and still matches your given mode-class.
+The Tolerant reader, by default, goes through the model-class and puts together the path to find the value in the input-source. But you can explicitly override this path with a custom value. It must be a valid JsonPath / XPath Expression. The Tolerant reader searches the XML / Json String with the given path. You can put the @CustomPath Annotation over a field. When you point to a subtree, the whole subtree is parsed by using the given path to the root of the subtree. The paths can be absolute or relative. When you use relative paths you are even more tolerant, because the element could be moved within the tree and still matches your given model-class.
 
 **An XML-Example with an absolute path:**
 ```java
