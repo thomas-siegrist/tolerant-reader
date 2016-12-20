@@ -1,7 +1,7 @@
 {
   "package": {
     "name": "tolerant-reader",
-    "repo": "TolerantReader",
+    "repo": "sigi/TolerantReader",
     "subject": "thomas-siegrist",
     "desc": "I was pushed completely automatically from travis-ci",
     "website_url": "https://bintray.com/sigi/TolerantReader/tolerant-reader",
