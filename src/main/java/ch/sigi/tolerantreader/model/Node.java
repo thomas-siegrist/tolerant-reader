@@ -10,9 +10,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-
+import ch.sigi.tolerantreader.annotation.NotNull;
+import ch.sigi.tolerantreader.annotation.Pattern;
 import org.apache.commons.lang3.Validate;
 
 import ch.sigi.tolerantreader.annotation.CustomName;

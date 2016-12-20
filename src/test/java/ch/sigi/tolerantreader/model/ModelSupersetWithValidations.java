@@ -4,11 +4,11 @@
 
 package ch.sigi.tolerantreader.model;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import ch.sigi.tolerantreader.annotation.CustomName;
+import ch.sigi.tolerantreader.annotation.NotNull;
+import ch.sigi.tolerantreader.annotation.Pattern;
 
 @XmlRootElement
 @CustomName("Model")

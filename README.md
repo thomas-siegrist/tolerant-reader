@@ -50,8 +50,8 @@ The Tolerant reader, by default, goes through the model-class and puts together 
 ## Validation
 ### Declaration
 In the Model-Class you can validate the output of the Parser at runtime with the following Annotations:
-- javax.validation.constraints.NotNull
-- javax.validation.constraints.Pattern
+- ch.sigi.tolerantreader.annotation.NotNull
+- jch.sigi.tolerantreader.annotation.Pattern
 
 You must put the Annotations on the field that you want to validate.
 ```java
@@ -80,6 +80,7 @@ In the current state, we provide JsonDocument and XmlDocument. De code is set-up
 * Refactor code, that it will be reusable for JSON-Parsing
 * Write the same logic for tolerant reading JSON
 * Introduce Field-Validations
+* Remove Dependency to javax.annotation by adding our own annotations for validation
 
 ## TODOs
 * Performance-Improvements / Optimizations through working with Tree-Oriented Frameworks instead of XPath / JsonPath:

@@ -6,8 +6,7 @@ package ch.sigi.tolerantreader.validation.impl;
 
 import java.util.regex.Pattern;
 
-import javax.validation.constraints.NotNull;
-
+import ch.sigi.tolerantreader.annotation.NotNull;
 import ch.sigi.tolerantreader.exception.ValidationException;
 import ch.sigi.tolerantreader.model.Node;
 import ch.sigi.tolerantreader.validation.Validator;
@@ -28,7 +27,7 @@ public class DefaultValidator implements Validator {
     }
 
     private void validatePatternConstraint(Object nodeValue, Node node) throws ValidationException {
-        javax.validation.constraints.Pattern patternAnnotation = node.getValidateRegex();
+        ch.sigi.tolerantreader.annotation.Pattern patternAnnotation = node.getValidateRegex();
         if (nodeValue == null || patternAnnotation == null)
             return;
 
