@@ -1,7 +1,6 @@
 # Java Tolerant-Reader
 
-[![Travis Build Status](http://img.shields.io/travis/aalmiray/markdown-gradle-plugin.svg)](https://travis-ci.org/thomas-siegrist/tolerant-reader)
-[![Bintray](https://api.bintray.com/packages/aalmiray/kordamp/markdown-gradle-plugin/images/download.svg)](https://bintray.com/sigi/maven/tolerant-reader)
+[![Travis Build Status](http://img.shields.io/travis/thomas-siegrist/tolerant-reader.svg)](https://travis-ci.org/thomas-siegrist/tolerant-reader) [![Bintray](https://api.bintray.com/packages/sigi/maven/tolerant-reader/images/download.svg)](https://bintray.com/sigi/maven/tolerant-reader)
 
 ## Why?
 Please read this wonderful article from Fowler first: http://martinfowler.com/bliki/TolerantReader.html
