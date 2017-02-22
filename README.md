@@ -1,5 +1,8 @@
 # Java Tolerant-Reader
 
+[![Travis Build Status](http://img.shields.io/travis/aalmiray/markdown-gradle-plugin.svg)](https://travis-ci.org/thomas-siegrist/tolerant-reader)
+[![Bintray](https://api.bintray.com/packages/aalmiray/kordamp/markdown-gradle-plugin/images/download.svg)](https://bintray.com/sigi/maven/tolerant-reader)
+
 ## Why?
 Please read this wonderful article from Fowler first: http://martinfowler.com/bliki/TolerantReader.html
 When you think, being tolerant is not the way to go, you better don't use this code =)
