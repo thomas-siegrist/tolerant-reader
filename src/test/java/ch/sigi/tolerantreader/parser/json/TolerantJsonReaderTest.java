@@ -4,6 +4,7 @@
 
 package ch.sigi.tolerantreader.parser.json;
 
+import ch.sigi.tolerantreader.CustomizedTolerantReader;
 import ch.sigi.tolerantreader.TolerantReader;
 import ch.sigi.tolerantreader.document.Document;
 import ch.sigi.tolerantreader.document.json.JsonDocument;
@@ -11,6 +12,7 @@ import ch.sigi.tolerantreader.exception.TolerantReaderException;
 import ch.sigi.tolerantreader.model.Model;
 import ch.sigi.tolerantreader.model.ModelWithJsonPathAnnotations;
 import ch.sigi.tolerantreader.parser.TolerantReaderBaseTest;
+import ch.sigi.tolerantreader.util.ObjectStreamer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.input.CharSequenceInputStream;
@@ -28,7 +30,7 @@ public class TolerantJsonReaderTest extends TolerantReaderBaseTest {
         InputStream is = objectToInputStream(model);
 
         try {
-            ModelWithJsonPathAnnotations parsedModel = TolerantReader.Builder
+            ModelWithJsonPathAnnotations parsedModel = CustomizedTolerantReader.Builder
                     .defaultSettings()
                     .build()
                     .read(documentFor(is, ModelWithJsonPathAnnotations.class));
@@ -37,7 +39,7 @@ public class TolerantJsonReaderTest extends TolerantReaderBaseTest {
             Assert.assertEquals(model.getSomeBoolean(), parsedModel.getSomeBoolean());
             Assert.assertEquals(model.getSubTree().getSomeText(), parsedModel.getSubTreeText());
             Assert.assertEquals(model.getSubTree().getSomeLong(), parsedModel.getSubTreeLong());
-            Assert.assertEquals(model.getSubTree().getSomeList().toArray(), parsedModel.getSubTreeList().toArray());
+            Assert.assertArrayEquals(model.getSubTree().getSomeList().toArray(), parsedModel.getSubTreeList().toArray());
             Assert.assertNull(parsedModel.getInexistent());
             Assert.assertNull(parsedModel.getSomeInexistendCustomField());
 
@@ -56,26 +58,7 @@ public class TolerantJsonReaderTest extends TolerantReaderBaseTest {
 
     @Override
     protected InputStream objectToInputStream(Object object) {
-        return toJsonStringInputStream(object);
-    }
-
-    private InputStream toJsonStringInputStream(Object instance) {
-        String xml = null;
-        try {
-            xml = objectToJson(instance);
-            System.out.println(xml);
-        } catch (JsonProcessingException e) {
-            Assert.fail("Exception during marshalling: " + e.getMessage());
-        }
-        return toStringInputStream(xml);
-    }
-
-    private InputStream toStringInputStream(String str) {
-        return new CharSequenceInputStream(str, StandardCharsets.UTF_8);
-    }
-
-    private <T> String objectToJson(T o) throws JsonProcessingException {
-        return new ObjectMapper().writeValueAsString(o);
+        return ObjectStreamer.objectToJsonInputStream(object);
     }
 
 }

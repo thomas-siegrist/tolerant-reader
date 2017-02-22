@@ -4,23 +4,18 @@
 
 package ch.sigi.tolerantreader.parser.xml;
 
-import ch.sigi.tolerantreader.TolerantReader;
+import ch.sigi.tolerantreader.CustomizedTolerantReader;
 import ch.sigi.tolerantreader.document.Document;
 import ch.sigi.tolerantreader.document.xml.XmlDocument;
 import ch.sigi.tolerantreader.exception.TolerantReaderException;
 import ch.sigi.tolerantreader.model.Model;
 import ch.sigi.tolerantreader.model.ModelWithXPathAnnotations;
 import ch.sigi.tolerantreader.parser.TolerantReaderBaseTest;
-import org.apache.commons.io.input.CharSequenceInputStream;
+import ch.sigi.tolerantreader.util.ObjectStreamer;
 import org.junit.Assert;
 import org.junit.Test;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
 import java.io.InputStream;
-import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
 
 public class TolerantXmlReaderTest extends TolerantReaderBaseTest {
 
@@ -30,7 +25,7 @@ public class TolerantXmlReaderTest extends TolerantReaderBaseTest {
         InputStream is = objectToInputStream(model);
 
         try {
-            ModelWithXPathAnnotations parsedModel = TolerantReader.Builder
+            ModelWithXPathAnnotations parsedModel = CustomizedTolerantReader.Builder
                     .defaultSettings()
                     .build()
                     .read(documentFor(is, ModelWithXPathAnnotations.class));
@@ -39,7 +34,7 @@ public class TolerantXmlReaderTest extends TolerantReaderBaseTest {
             Assert.assertEquals(model.getSomeBoolean(), parsedModel.getSomeBoolean());
             Assert.assertEquals(model.getSubTree().getSomeText(), parsedModel.getSubTreeText());
             Assert.assertEquals(model.getSubTree().getSomeLong(), parsedModel.getSubTreeLong());
-            Assert.assertEquals(model.getSubTree().getSomeList().toArray(), parsedModel.getSubTreeList().toArray());
+            Assert.assertArrayEquals(model.getSubTree().getSomeList().toArray(), parsedModel.getSubTreeList().toArray());
             Assert.assertNull(parsedModel.getInexistent());
             Assert.assertNull(parsedModel.getSomeInexistendCustomField());
 
@@ -58,31 +53,7 @@ public class TolerantXmlReaderTest extends TolerantReaderBaseTest {
 
     @Override
     protected InputStream objectToInputStream(Object object) {
-        return toXmlStringInputStream(object);
-    }
-
-    private InputStream toXmlStringInputStream(Object instance) {
-        String xml = null;
-        try {
-            xml = objectToXml(instance);
-            System.out.println(xml);
-        } catch (JAXBException e) {
-            Assert.fail("Exception during marshalling: " + e.getMessage());
-        }
-        return toStringInputStream(xml);
-    }
-
-    private <T> String objectToXml(T o) throws JAXBException {
-        JAXBContext jaxbContext = JAXBContext.newInstance(o.getClass());
-        Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
-        StringWriter sw = new StringWriter();
-        jaxbMarshaller.marshal(o, sw);
-        sw.flush();
-        return sw.toString();
-    }
-
-    private InputStream toStringInputStream(String str) {
-        return new CharSequenceInputStream(str, StandardCharsets.UTF_8);
+        return ObjectStreamer.objectToXmlInputStream(object);
     }
 
 }

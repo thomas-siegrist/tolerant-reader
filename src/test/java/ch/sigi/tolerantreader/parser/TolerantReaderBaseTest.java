@@ -1,21 +1,14 @@
 package ch.sigi.tolerantreader.parser;
 
-import java.io.InputStream;
-import java.util.Arrays;
-
-import org.junit.Assert;
-import org.junit.Test;
-
-import ch.sigi.tolerantreader.TolerantReader;
+import ch.sigi.tolerantreader.CustomizedTolerantReader;
 import ch.sigi.tolerantreader.document.Document;
 import ch.sigi.tolerantreader.exception.TolerantReaderException;
 import ch.sigi.tolerantreader.exception.ValidationException;
-import ch.sigi.tolerantreader.model.Model;
-import ch.sigi.tolerantreader.model.ModelSubset;
-import ch.sigi.tolerantreader.model.ModelSuperset;
-import ch.sigi.tolerantreader.model.ModelSupersetWithValidations;
-import ch.sigi.tolerantreader.model.ModelWithInvalidAnnotations;
-import ch.sigi.tolerantreader.model.SubTree;
+import ch.sigi.tolerantreader.model.*;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.io.InputStream;
 
 /**
  * Created by thomas on 11.12.16.
@@ -32,7 +25,7 @@ public abstract class TolerantReaderBaseTest {
         InputStream is = objectToInputStream(model);
 
         try {
-            Model parsedModel = TolerantReader.Builder
+            Model parsedModel = CustomizedTolerantReader.Builder
                     .defaultSettings()
                     .build()
                     .read(documentFor(is, Model.class));
@@ -50,7 +43,7 @@ public abstract class TolerantReaderBaseTest {
         InputStream is = objectToInputStream(model);
 
         try {
-            ModelSuperset parsedModel = TolerantReader.Builder
+            ModelSuperset parsedModel = CustomizedTolerantReader.Builder
                     .defaultSettings()
                     .build()
                     .read(documentFor(is, ModelSuperset.class));
@@ -79,7 +72,7 @@ public abstract class TolerantReaderBaseTest {
         InputStream is = objectToInputStream(model);
 
         try {
-            ModelSubset parsedModel = TolerantReader.Builder
+            ModelSubset parsedModel = CustomizedTolerantReader.Builder
                     .defaultSettings()
                     .build()
                     .read(documentFor(is, ModelSubset.class));
@@ -102,7 +95,7 @@ public abstract class TolerantReaderBaseTest {
         Model model = exampleModel();
         InputStream is = objectToInputStream(model);
 
-        TolerantReader.Builder
+        CustomizedTolerantReader.Builder
                 .defaultSettings()
                 .build()
                 .read(documentFor(is, ModelWithInvalidAnnotations.class));
@@ -114,7 +107,7 @@ public abstract class TolerantReaderBaseTest {
         InputStream is = objectToInputStream(model);
 
         try {
-            TolerantReader.Builder
+            CustomizedTolerantReader.Builder
                     .defaultSettings()
                     .build()
                     .read(documentFor(is, ModelSupersetWithValidations.class));
@@ -133,7 +126,7 @@ public abstract class TolerantReaderBaseTest {
         InputStream is = objectToInputStream(model);
 
         try {
-            TolerantReader.Builder
+            CustomizedTolerantReader.Builder
                     .defaultSettings()
                     .build()
                     .read(documentFor(is, ModelSupersetWithValidations.class));
@@ -153,7 +146,7 @@ public abstract class TolerantReaderBaseTest {
         InputStream is = objectToInputStream(model);
 
         try {
-            TolerantReader.Builder
+            CustomizedTolerantReader.Builder
                     .defaultSettings()
                     .build()
                     .read(documentFor(is, ModelSupersetWithValidations.class));
@@ -164,25 +157,7 @@ public abstract class TolerantReaderBaseTest {
     }
 
     protected Model exampleModel() {
-        Model model = new Model();
-        model.setSomeText("Some long text .....");
-        model.setSomeLong(1L);
-        model.setSomeBoolean(false);
-        model.setSomeShort((short) 99);
-        model.setSomeInteger(10_000);
-        model.setSomeDouble(1.1d);
-        model.setSomeFloat(1.1f);
-
-        model.setSubTree(exampleSubtree());
-        return model;
-    }
-
-    private SubTree exampleSubtree() {
-        SubTree subtree = new SubTree();
-        subtree.setSomeLong(99L);
-        subtree.setSomeText("Subtree-Text");
-        subtree.setSomeList(Arrays.asList("Element1", "Element2", "Element3"));
-        return subtree;
+        return ExampleData.getModel();
     }
 
 }
